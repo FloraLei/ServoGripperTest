@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电动夹爪控制系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            background: #f5f5f5;
+            border-radius: 5px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4444;
+            animation: pulse 1s infinite;
+        }
+
+        .status-dot.connected {
+            background: #44ff44;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .panel h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .status-item {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #667eea;
+        }
+
+        .status-label {
+            color: #666;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .status-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-open {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            grid-column: 1;
+        }
+
+        .btn-open:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-close {
+            background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
+            color: white;
+            grid-column: 2;
+        }
+
+        .btn-close:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, #ff9800 0%, #e68900 100%);
+            color: white;
+            grid-column: 1 / 3;
+        }
+
+        .btn-stop:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 152, 0, 0.3);
+        }
+
+        .btn-vibrate {
+            background: linear-gradient(135deg, #2196F3 0%, #0b7dda 100%);
+            color: white;
+        }
+
+        .btn-vibrate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+        }
+
+        .slider-section {
+            margin: 20px 0;
+        }
+
+        .slider-section label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .slider-value {
+            min-width: 50px;
+            text-align: right;
+            font-weight: bold;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .btn-go {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-go:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .config-section {
+            margin-top: 20px;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .config-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .config-item label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .config-item input,
+        .config-item select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .config-item input:focus,
+        .config-item select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+
+        .logs-section {
+            grid-column: 1 / 3;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            background: #f9f9f9;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .log-action {
+            font-weight: bold;
+            color: #667eea;
+            min-width: 100px;
+        }
+
+        .log-details {
+            color: #666;
+            text-align: right;
+        }
+
+        .settings-toggle {
+            background: linear-gradient(135deg, #9C27B0 0%, #7b1fa2 100%);
+            color: white;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .settings-panel {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #ddd;
+        }
+
+        .settings-panel.show {
+            display: block;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #1565c0;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .logs-section {
+                grid-column: 1;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>⚙️ 电动夹爪控制系统</h1>
+                <small>ESP32 WiFi 版本</small>
+            </div>
+            <div class="connection-status">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">连接中...</span>
+                <input type="text" id="ipInput" placeholder="输入 IP 地址" value="192.168.1.100" style="margin-left: 20px; padding: 5px; border: 1px solid #ddd; border-radius: 3px;">
+                <button onclick="updateIP()" style="padding: 5px 10px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer;">连接</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- 控制面板 -->
+            <div class="panel">
+                <h2>🎮 控制</h2>
+
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-label">当前角度</div>
+                        <div class="status-value" id="angleDisplay">0°</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">电流值</div>
+                        <div class="status-value" id="currentDisplay">0mA</div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-open" onclick="apiCall('/api/open')">🔓 打开</button>
+                    <button class="btn-close" onclick="apiCall('/api/close')">🔒 关闭</button>
+                    <button class="btn-stop" onclick="apiCall('/api/stop')">⏸ 停止</button>
+                </div>
+
+                <div class="slider-section">
+                    <label>转到角度</label>
+                    <div class="slider-container">
+                        <input type="range" min="0" max="270" value="90" id="angleSlider">
+                        <div class="slider-value"><span id="sliderValue">90</span>°</div>
+                    </div>
+                    <button class="btn-go" onclick="goToAngle()">前往</button>
+                </div>
+
+                <button class="btn-vibrate" onclick="apiCall('/api/vibrate')">📳 测试振动</button>
+
+                <button class="settings-toggle" onclick="toggleSettings()">⚙️ 高级设置</button>
+
+                <div class="settings-panel" id="settingsPanel">
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label>打开角度</label>
+                            <input type="number" id="openAngle" min="0" max="270" value="0">
+                        </div>
+                        <div class="config-item">
+                            <label>关闭角度</label>
+                            <input type="number" id="closeAngle" min="0" max="270" value="270">
+                        </div>
+                        <div class="config-item">
+                            <label>运动速度</label>
+                            <input type="number" id="speed" min="1" max="10" value="5">
+                        </div>
+                        <div class="config-item">
+                            <label>电流阈值 (mA)</label>
+                            <input type="number" id="threshold" min="50" max="1000" value="300">
+                        </div>
+                        <div class="config-item">
+                            <label>振动时长 (ms)</label>
+                            <input type="number" id="vibrate" min="50" max="1000" value="200">
+                        </div>
+                    </div>
+                    <button class="btn-go" onclick="saveConfig()" style="margin-top: 15px;">💾 保存配置</button>
+                </div>
+
+                <div class="error" id="errorMsg"></div>
+                <div class="success" id="successMsg"></div>
+            </div>
+
+            <!-- 日志面板 -->
+            <div class="panel">
+                <h2>📋 日志和信息</h2>
+
+                <div class="status-grid" style="margin-bottom: 15px;">
+                    <div class="status-item">
+                        <div class="status-label">运行时间</div>
+                        <div class="status-value" id="uptimeDisplay">0s</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">日志条数</div>
+                        <div class="status-value" id="logCountDisplay">0</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 15px; margin-bottom: 10px; color: #666; font-size: 14px;">📝 最近操作</h3>
+                <div class="logs-section" id="logsContainer">
+                    <div class="log-entry">
+                        <span style="color: #999;">等待数据...</span>
+                    </div>
+                </div>
+
+                <button onclick="refreshData()" style="width: 100%; margin-top: 15px; padding: 10px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">🔄 刷新</button>
+
+                <div class="info-box">
+                    <strong>💡 提示：</strong><br>
+                    确保 ESP32 已连接到 WiFi，并在输入框中输入正确的 IP 地址。<br>
+                    默认 IP: 192.168.1.100
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let baseURL = 'http://192.168.1.100';
+        let updateInterval;
+
+        function updateIP() {
+            const ip = document.getElementById('ipInput').value;
+            if (ip) {
+                baseURL = `http://${ip}`;
+                refreshData();
+                showSuccess('IP 已更新');
+            }
+        }
+
+        function apiCall(endpoint, method = 'POST') {
+            fetch(`${baseURL}${endpoint}`, {method: method})
+                .then(res => res.json())
+                .then(data => {
+                    refreshData();
+                    showSuccess('操作成功');
+                })
+                .catch(err => {
+                    showError('连接失败，请检查 IP 地址');
+                    updateConnectionStatus(false);
+                });
+        }
+
+        function goToAngle() {
+            const angle = document.getElementById('angleSlider').value;
+            fetch(`${baseURL}/api/go?angle=${angle}`, {method: 'POST'})
+                .then(res => res.json())
+                .then(data => {
+                    refreshData();
+                    showSuccess(`已转到 ${angle}°`);
+                })
+                .catch(err => showError('转动失败'));
+        }
+
+        function saveConfig() {
+            const params = new URLSearchParams({
+                open: document.getElementById('openAngle').value,
+                close: document.getElementById('closeAngle').value,
+                speed: document.getElementById('speed').value,
+                threshold: document.getElementById('threshold').value,
+                vibrate: document.getElementById('vibrate').value
+            });
+
+            fetch(`${baseURL}/api/config?${params}`, {method: 'POST'})
+                .then(res => res.json())
+                .then(data => {
+                    showSuccess('配置已保存');
+                    refreshData();
+                })
+                .catch(err => showError('保存失败'));
+        }
+
+        function refreshData() {
+            // 获取状态
+            fetch(`${baseURL}/api/status`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('angleDisplay').textContent = data.angle + '°';
+                    document.getElementById('currentDisplay').textContent = Math.round(data.current) + 'mA';
+                    document.getElementById('uptimeDisplay').textContent = formatTime(data.uptime);
+                    document.getElementById('logCountDisplay').textContent = data.logs_count;
+                    updateConnectionStatus(data.wifi);
+                })
+                .catch(err => {
+                    updateConnectionStatus(false);
+                });
+
+            // 获取配置
+            fetch(`${baseURL}/api/config`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('openAngle').value = data.open_angle;
+                    document.getElementById('closeAngle').value = data.close_angle;
+                    document.getElementById('speed').value = data.speed;
+                    document.getElementById('threshold').value = data.threshold;
+                    document.getElementById('vibrate').value = data.vibrate_time;
+                })
+                .catch(err => {});
+
+            // 获取日志
+            fetch(`${baseURL}/api/logs`)
+                .then(res => res.json())
+                .then(data => {
+                    const container = document.getElementById('logsContainer');
+                    container.innerHTML = '';
+
+                    if (data.length === 0) {
+                        container.innerHTML = '<div class="log-entry"><span style="color: #999;">暂无日志</span></div>';
+                        return;
+                    }
+
+                    // 显示最后 10 条，倒序
+                    data.slice(-10).reverse().forEach(log => {
+                        const entry = document.createElement('div');
+                        entry.className = 'log-entry';
+                        entry.innerHTML = `
+                            <div>
+                                <span class="log-action">${log.action.toUpperCase()}</span>
+                            </div>
+                            <div class="log-details">
+                                ${log.angle}° | ${log.current.toFixed(0)}mA | ${log.time}s
+                            </div>
+                        `;
+                        container.appendChild(entry);
+                    });
+                })
+                .catch(err => {});
+        }
+
+        function toggleSettings() {
+            document.getElementById('settingsPanel').classList.toggle('show');
+        }
+
+        function updateConnectionStatus(connected) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+
+            if (connected) {
+                dot.classList.add('connected');
+                text.textContent = '已连接 ✓';
+            } else {
+                dot.classList.remove('connected');
+                text.textContent = '未连接 ✗';
+            }
+        }
+
+        function formatTime(seconds) {
+            if (seconds < 60) return seconds + 's';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return minutes + 'm';
+            const hours = Math.floor(minutes / 60);
+            return hours + 'h ' + (minutes % 60) + 'm';
+        }
+
+        function showError(msg) {
+            const elem = document.getElementById('errorMsg');
+            elem.textContent = '❌ ' + msg;
+            elem.style.display = 'block';
+            setTimeout(() => elem.style.display = 'none', 3000);
+        }
+
+        function showSuccess(msg) {
+            const elem = document.getElementById('successMsg');
+            elem.textContent = '✅ ' + msg;
+            elem.style.display = 'block';
+            setTimeout(() => elem.style.display = 'none', 3000);
+        }
+
+        // 滑块事件
+        document.getElementById('angleSlider').addEventListener('input', (e) => {
+            document.getElementById('sliderValue').textContent = e.target.value;
+        });
+
+        // 初始化
+        refreshData();
+        updateInterval = setInterval(refreshData, 1000);
+    </script>
+</body>
+</html>

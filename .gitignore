@@ -1,0 +1,43 @@
+# IDE和编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Arduino IDE
+*.bak
+*.tmp
+*.hex
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+
+# 构建输出
+build/
+dist/
+*.o
+*.a
+
+# 日志文件
+*.log
+
+# 操作系统
+Thumbs.db
+.DS_Store
+
+# 临时文件
+*.tmp
+*.temp
+*.bak
+
+# 不追踪 Archive 目录的具体内容（但保留文件夹）
+# Archive/ 已包含在项目中，作为历史文件备份
