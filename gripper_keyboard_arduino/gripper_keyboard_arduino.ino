@@ -317,17 +317,24 @@ void gripperOpen() {
 }
 
 void gripperClose() {
-  // gripLocked 在夹持保护触发后置 true，必须先 open 才能再次关闭
-  // 这防止了按住 'q' 键时键盘自动重复绕过夹持保护
-  if (gripLocked) {
-    Serial.println(F("[BLOCKED] Grip active - open first (a)"));
-    return;
-  }
+  // 允许在 gripLocked 状态下继续按 'q' 来增加夹紧力度
+  // 如果已经检测到夹持，继续关闭时会再次进入 checkGripDetect() 逻辑
   closing     = true;   // 标记进入关闭过程，使能夹持保护检测
-  peakCurrent = 0;      // 每次新的关闭动作重置峰值记录
-  Serial.println(F("[CLOSE]"));
-  moveToAngle(angleClose);
-  logAction(angleClose, "close");
+  
+  if (!gripLocked) {
+    // 首次关闭动作
+    peakCurrent = 0;
+    Serial.println(F("[CLOSE]"));
+    moveToAngle(angleClose);
+  } else {
+    // 已夹持，继续关闭：目标角度增加 3 度，逐步增加夹力
+    int nextAngle = min(targetAngle + 3, angleClose + 10);  // 最多增加10度以防损坏
+    Serial.print(F("[CLOSE+] Increase grip to "));
+    Serial.print(nextAngle);
+    Serial.println(F("deg"));
+    moveToAngle(nextAngle);
+  }
+  logAction(targetAngle, "close");
 }
 
 void gripperHold() {
@@ -378,8 +385,9 @@ void updateServoPosition() {
     currentAngle = min(currentAngle + moveSpeed, targetAngle);
   } else if (currentAngle > targetAngle) {
     currentAngle = max(currentAngle - moveSpeed, targetAngle);
-  } else if (closing) {
+  } else if (closing && !gripLocked) {
     // 自然走到 angleClose 但没触发夹持保护，说明没夹到东西，清除 closing 标志
+    // 如果已经 gripLocked，保持 closing 状态，允许用户继续按 'q' 来尝试
     closing = false;
   }
   sendPWMPulse(currentAngle);
@@ -399,7 +407,8 @@ void moveToAngle(int angle) {
 // =========================================================
 
 // 只在 closing==true 时生效，避免开启或保持过程中误触发
-// 检测到夹持后：停住 → 振动反馈 → 设 gripLocked 阻止二次关闭
+// 首次检测到夹持后会设 gripLocked=true 并振动
+// 如果在已夹持状态下用户继续按 'q'（closing=true），可以继续向 angleClose 靠近
 void checkGripDetect() {
   if (!closing || !ina219Ready) return;
 
@@ -407,18 +416,28 @@ void checkGripDetect() {
   if (currentCurrent > peakCurrent) peakCurrent = currentCurrent;
 
   if (currentCurrent > gripThresh) {
-    closing     = false;
-    gripLocked  = true;           // 直到下次 open 才解锁
-    targetAngle = currentAngle;   // 就地停住
-    Serial.print(F("[GRIP] Object at "));
-    Serial.print(currentAngle);
-    Serial.print(F("deg  detect="));
-    Serial.print(currentCurrent, 0);
-    Serial.print(F("mA  peak="));
-    Serial.print(peakCurrent, 0);
-    Serial.println(F("mA  (press a to open)"));
-    startVibration();
-    logAction(currentAngle, "grip");
+    if (!gripLocked) {
+      // 首次检测到夹持：停住 + 振动反馈
+      gripLocked  = true;
+      targetAngle = currentAngle;   // 就地停住
+      Serial.print(F("[GRIP] Object at "));
+      Serial.print(currentAngle);
+      Serial.print(F("deg  detect="));
+      Serial.print(currentCurrent, 0);
+      Serial.print(F("mA  peak="));
+      Serial.print(peakCurrent, 0);
+      Serial.println(F("mA  (press q again to squeeze harder or a to open)"));
+      startVibration();
+      logAction(currentAngle, "grip");
+    } else {
+      // 已经夹持，继续按 'q' 时如果电流仍然过高，保持停住
+      // 但不再改变 targetAngle，让用户可以决定下一步（再按 q 或按 a 打开）
+      Serial.print(F("[GRIP+] Still at "));
+      Serial.print(currentAngle);
+      Serial.print(F("deg  current="));
+      Serial.print(currentCurrent, 0);
+      Serial.println(F("mA"));
+    }
   }
 }
 
